@@ -37,42 +37,38 @@ func encryptAES(plaintext []byte, key []byte) (ciphertext []byte) {
 	return
 }
 
-func fPrintPay(seal []byte, flag uint) {
-
+func fPrintPayString(seal []byte, flag uint) (fPayload string) {
+	fPayload = ""
 	form := "0x%s"
 	end := ", "
 	if flag == PayloadFlag {
-		fmt.Println("")
-		fmt.Println("[!] AES Encrypted Payload Array:")
-		fmt.Println("")
-		fmt.Print("var buf = []byte { \n\t")
+		fPayload += "var buf = []byte { \n\t"
 	} else if flag == KeyFlag {
-		fmt.Println("")
-		fmt.Println("[!] AES Key Array")
-		fmt.Println("")
-		fmt.Print("var key = []byte { \n\t")
+
+		fPayload += "var key = []byte { \n\t"
 	}
 	for i, s := range seal {
 		if i == (len(seal) - 1) {
 			end = ""
 		}
-		fmt.Print(fmt.Sprintf(form, strconv.FormatInt(int64(s), 16)) + end)
+		fPayload += fmt.Sprintf(form, strconv.FormatInt(int64(s), 16)) + end
 
 		if (i%8 == 7) && (i != 0) || (end == "") {
 			if end != "" {
-				fmt.Print("\n\t")
+				fPayload += "\n\t"
 			}
 		}
 
 	}
 
-	fmt.Print("} \n\n")
+	fPayload += "} \n\n"
+	return
 
 }
 
 func main() {
 	var eKey []byte
-	fmt.Println("Golang AES Payload Encryption v0.01")
+	fmt.Println("\n---\nGolang AES Payload Encryption v1.0\n---\n")
 	args := os.Args[1:]
 
 	if len(args) == 0 {
@@ -98,7 +94,10 @@ func main() {
 
 	ciphertext := encryptAES(binFile, eKey)
 
-	fPrintPay(eKey, KeyFlag)
-	fPrintPay(ciphertext, PayloadFlag)
+	p2w := fPrintPayString(eKey, KeyFlag)
+	k2w := fPrintPayString(ciphertext, PayloadFlag)
+
+	fmt.Println(p2w)
+	fmt.Println(k2w)
 
 }
