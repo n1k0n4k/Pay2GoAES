@@ -1,4 +1,6 @@
-// Reads a raw binary file and 32-byte AES key and returns an AES encrypted byte array in golang format.
+// Automated build of multiple droppers with an encrypted payload
+// Starting from pay2goaes base
+
 package main
 
 import (
