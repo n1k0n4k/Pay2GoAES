@@ -4,13 +4,18 @@
 package main
 
 import (
+	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -55,7 +60,7 @@ func fPrintPayString(seal []byte, flag uint) (fPayload string) {
 		}
 		fPayload += fmt.Sprintf(form, strconv.FormatInt(int64(s), 16)) + end
 
-		if (i%8 == 7) && (i != 0) || (end == "") {
+		if (i%16 == 15) || (end == "") {
 			if end != "" {
 				fPayload += "\n\t"
 			}
@@ -70,7 +75,8 @@ func fPrintPayString(seal []byte, flag uint) (fPayload string) {
 
 func main() {
 	var eKey []byte
-	fmt.Println("\n---\nGolang AES Payload Encryption v1.0\n---\n")
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\n---\nGolang AES Payload Encryption v1.0\n---\n")
 	args := os.Args[1:]
 
 	if len(args) == 0 {
@@ -96,10 +102,62 @@ func main() {
 
 	ciphertext := encryptAES(binFile, eKey)
 
-	p2w := fPrintPayString(eKey, KeyFlag)
-	k2w := fPrintPayString(ciphertext, PayloadFlag)
+	k2w := fPrintPayString(eKey, KeyFlag)
+	p2w := fPrintPayString(ciphertext, PayloadFlag)
 
-	fmt.Println(p2w)
-	fmt.Println(k2w)
+	// fmt.Println(k2w)
+	// fmt.Println(p2w)
 
+	cd, _ := os.Getwd()
+
+	var files []string
+
+	err = filepath.Walk(cd, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+
+		if !info.IsDir() && filepath.Ext(path) == ".go" && info.Name()[0:4] == "temp" {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		fmt.Println(file)
+	}
+
+	fmt.Print("Is this the correct list of files to build?")
+	fmt.Print(" y/n > ")
+	res, _ := reader.ReadString('\n')
+	fmt.Println(res)
+	if res[0:1] != "y" {
+		fmt.Println("exiting...")
+		os.Exit(0)
+	}
+
+	for _, fPath := range files {
+		read, err := ioutil.ReadFile(fPath)
+		if err != nil {
+			panic(err)
+		}
+		//fmt.Println(string(read))
+		//fmt.Println(fPath)
+
+		newContents := strings.Replace(string(read), "<PAYLOAD>", p2w, -1)
+		newContents = strings.Replace(newContents, "<KEY>", k2w, -1)
+
+		//fmt.Println(newContents)
+		nPath := fPath[:len(fPath)-3] + ".LOADED" + ".go"
+
+		err = ioutil.WriteFile(nPath, []byte(newContents), 0644)
+		if err != nil {
+			panic(err)
+		}
+
+	}
 }

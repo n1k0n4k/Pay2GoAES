@@ -75,17 +75,21 @@ func fPrintPayString(seal []byte, flag uint) (fPayload string) {
 
 }
 
-func buildExe(fPath string, index int, wg *sync.WaitGroup) {
+func buildExe(fPath string, index int, env []string, wg *sync.WaitGroup) {
 	//aPath := strings.Split(fPath, "/")
-	oldGOOS := os.Getenv("GOOS")
-	os.Setenv("GOOS", "WINDOWS")
-	cmd := exec.Command("go", "build", "-ldflags='-w -s'", "-o", fmt.Sprintf("payload%s.exe", fmt.Sprint(index)), fPath)
-	fmt.Println(cmd)
-	err := cmd.Run()
+
+	//gCache := "GOCACHE" + build.Default.
+	outFile := fmt.Sprintf("payload%s.exe", fmt.Sprint(index))
+
+	cmd := exec.Command("go", "build", "-o", outFile, "-ldflags=-w -s", fPath)
+	cmd.Env = env
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("failed to build, err:", err.Error())
 	}
-	os.Setenv("GOOS", oldGOOS)
+	fmt.Println(string(out))
+
 	//cmd2 := exec.Command("upx", "--brute", fmt.Sprintf("payload%s.exe", fmt.Sprint(index)))
 	//cmd2.Run()
 
@@ -159,6 +163,17 @@ func main() {
 		fmt.Println("exiting...")
 		os.Exit(0)
 	}
+
+	cmd := exec.Command("go", "env")
+	out, err := cmd.Output()
+	check(err)
+
+	env := strings.Split(string(out), "\n")
+	for _, thing := range env {
+		//line := strings.Replace(thing, "\"", "", -1)
+		fmt.Println(thing)
+	}
+
 	wg := sync.WaitGroup{}
 
 	for i, fPath := range files {
@@ -179,8 +194,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+
 		wg.Add(1)
-		//go buildExe(nPath, i, &wg)
+		go buildExe(nPath, i, env, &wg)
 	}
 	wg.Wait()
 }

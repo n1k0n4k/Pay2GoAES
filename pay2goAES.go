@@ -53,7 +53,7 @@ func fPrintPayString(seal []byte, flag uint) (fPayload string) {
 		}
 		fPayload += fmt.Sprintf(form, strconv.FormatInt(int64(s), 16)) + end
 
-		if (i%8 == 7) && (i != 0) || (end == "") {
+		if (i%12 == 11) && (i != 0) || (end == "") {
 			if end != "" {
 				fPayload += "\n\t"
 			}

